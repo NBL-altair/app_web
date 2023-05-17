@@ -32,6 +32,10 @@ services:
       - ./config_override.php:/var/www/html/config_override.php
     links:
       - mysql
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.vtiger.rule=Host(`vtiger.localhost`)"
+      - "traefik.http.routers.vtiger.entrypoints=web"
     networks:
       - tf_network
 
@@ -52,6 +56,10 @@ services:
       - MYSQL_ROOT_PASSWORD=mdp123*
     ports:
       - "8081:8080"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.adminer.rule=Host(`adminer.localhost`)"
+      - "traefik.http.routers.adminer.entrypoints=web"
     networks:
       - tf_network
 
@@ -64,12 +72,15 @@ services:
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
+      # - "--certificatesresolvers.myresolver.acme.email=postmaster@example.com"
+      # - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
     ports:
       # - 443:443
       - "80:80"
       - "8080:8080"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
+      # - "./letsencrypt:/letsencrypt"
     networks:
       - tf_network
     
