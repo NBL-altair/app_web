@@ -1,0 +1,80 @@
+version: '3.9'
+
+services:
+
+  nginx:
+    image: nginx:1.16.1-alpine
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./default.conf:/etc/nginx/conf.d/default.conf
+      - ./localhost.cert:/etc/ssl/localhost.cert
+      - ./localhost.key:/etc/ssl/localhost.key
+    links:
+      - vtiger
+    networks:
+      - tf_network
+
+  vtiger:
+    image: javanile/vtiger:7.1.0
+    environment:
+      - VT_DEBUG=true
+      - VT_SITE_URL=https://localhost/
+      - MYSQL_HOST=mysql
+      - MYSQL_DATABASE=vtiger
+      - MYSQL_ROOT_PASSWORD=secret
+    ports:
+      - 8080:80
+    volumes:
+      - ./:/app
+      - ./volume:/var/lib/vtiger
+      - ./config_override.php:/var/www/html/config_override.php
+    links:
+      - mysql
+    networks:
+      - tf_network
+
+  mysql:
+    image: mysql:5.5
+    environment:
+      - MYSQL_DATABASE=vtiger
+      - MYSQL_ROOT_PASSWORD=mdp123*
+    volumes:
+      - mysql:/var/lib/mysql:rw
+    networks:
+      - tf_network
+
+  adminer:
+    image: javanile/adminer
+    environment:
+      - MYSQL_DATABASE=vtiger
+      - MYSQL_ROOT_PASSWORD=mdp123*
+    ports:
+      - "8081:8080"
+    networks:
+      - tf_network
+
+  traefik:
+    image: "traefik:v2.10"
+    container_name: "traefik"
+    command:
+      - "--log.level=DEBUG"
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    ports:
+      # - 443:443
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    networks:
+      - tf_network
+    
+volumes:
+  mysql:
+
+networks:
+  tf_network:
